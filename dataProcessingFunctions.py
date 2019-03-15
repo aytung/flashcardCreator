@@ -2,6 +2,33 @@ import re
 
 exampleRegexp = re.compile(r"""「.*」""")
 
+# TODO: write logic for parsing the original word 
+# into origKanji, origReading
+# TODO: consolidate single function for retrieving flashcard
+
+furiganaRegexp = re.compile(r"""\[.*\]""")
+def getWordFurigana(word):
+	sections = word.split(' ')
+
+	# check how many sections there are
+	# we want to return tuples corresponding to characters and words
+	# when there is no furigana, then we write a tuple consisting of the 
+	# section, with None 
+	furiganaSection = []
+	wordSection = []
+	for section in sections:
+		if furiganaRegexp.search(section):
+			word = [:furiganaRegexp.search(section).start()]
+			furigana = furiganaRegexp.findAll(section)[1:-1]
+
+			wordSection.append(word)
+			furiganaSection.append(furigana)
+		else:
+			wordSection.append(section)
+
+
+	return "".join(wordSection), "".join(furiganaSection)
+
 def longestMatchingSubsequence(str1, str2):
 	row = [0 for _ in range(0, len(str1) + 1)]
 	cache = [row[:] for _ in range(0, len(str2))]
@@ -17,12 +44,6 @@ def longestMatchingSubsequence(str1, str2):
 	return cache[-1][-1]
 
 
-links = soup.find('ul', {'class' : 'list-search-a'})
-# has the pronunciation of the word and kanji
-#links.a.get('href')
-#links.a.dt
-definitions = links.findAll('li')
-
 def getFlashcard(word):
 
 	searchResults = getSearchResults(word)
@@ -37,7 +58,15 @@ import re
 
 exampleRegexp = re.compile(r"""「.*」""")
 
+
 def getDefinitionSentences(soup):
+	links = soup.find('ul', {'class' : 'list-search-a'})
+	# has the pronunciation of the word and kanji
+	#links.a.get('href')
+	#links.a.dt
+	definitions = links.findAll('li')
+
+
 	dictEntries = soup.find_all('ol', {'class' : 'meaning cx'})
 
 	exampleSentences = []

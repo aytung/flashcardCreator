@@ -1,9 +1,7 @@
 import csv
-
+import webParsingFunctions
+import dataProcessingFunctions
 with open('anki.txt', 'r') as readfile, open('anki.csv', 'w') as writefile:
-	# TODO: Write logic for finding each row of the readfile
-	# TODO: Write logic to use the helper utilities to find values to write
-	# TODO: Write logic for writing the values that are returned 
 
 	writer = csv.writer(writefile, quoting=csv.QUOTE_MINIMAL)
 
@@ -16,6 +14,24 @@ with open('anki.txt', 'r') as readfile, open('anki.csv', 'w') as writefile:
 	dict_card = None
 
 	for cur_line in readfile:
+		# DONE: Write logic for finding each row of the readfile
+ 		# TODO: make function to parse the line appropriately
+
+ 		word, furigana = dataProcessingFunctions.getWordFurigana(cur_line)
+		# TODO: Write logic to use the helper utilities to find values to write
+		# TODO: Write logic for writing the values that are returned 
+		searchResults = webParsingFunctions.getSearchResults(word)
+		# TODO: write logic for handling invalid webpage
+
+		definitionLink = webParsingFunctions.getDefinitionLink(furigana + word, searchResults)
+		definitions = webParsingFunctions.getSoup(definitionLink)
+		definition, sentences = dataProcessingFunctions.getDefinitionSentences(definitions)
+		# TODO: write logic for turning definitions into properly formatted values 
+		# TODO: write logic for writing row for dictionary entries
+		# TODO: write logic for substuting readings into example sentences, if applicable
+
+		# TODO: write logic for writing example sentences into separate lines 
+
 		# if it is a sentence, immediately write it
 		if is_sentence(cur_line.strip()):
 			writer.writerow([cur_line[:-1], None])
