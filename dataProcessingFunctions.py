@@ -7,6 +7,9 @@ exampleRegexp = re.compile(r"""「.*」""")
 # TODO: consolidate single function for retrieving flashcard
 
 furiganaRegexp = re.compile(r"""\[.*\]""")
+
+def validWordPage(soup):
+	return not (soup.find('div', {'class' : 'section contents-wrap-a-in search lead'}) == None)
 def getWordFurigana(word):
 	sections = word.split(' ')
 
@@ -43,7 +46,10 @@ def longestMatchingSubsequence(str1, str2):
 
 	return cache[-1][-1]
 
-
+def definitionWordToCard(word, definition):
+	card = [word]
+	# TODO: join definitions appropriately 
+	# 
 def getFlashcard(word):
 
 	searchResults = getSearchResults(word)

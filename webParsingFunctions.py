@@ -14,12 +14,13 @@ def getSoup(url):
 
 def isInvalidWord(soup):
 	# TODO: write logic for detecting invalid webpage
+	None
 def getSearchResults(word):
-	percentEncoding = urllib.parse.quote(word)
+	percentEncoding = quote(word)
 	wordUrl = 'https://dictionary.goo.ne.jp/srch/jn/' + percentEncoding + '/m0u/'
 	return getSoup(wordUrl)
 
-def getDefinitionLink(origKanji, origReading, soup):
+def getDefinitionLink(word, soup):
 	longestMatch = 0
 	longestLink = None
 	for definition in definitions:
@@ -33,9 +34,7 @@ def getDefinitionLink(origKanji, origReading, soup):
 
 		# dictReadings = "".join(dictReadings.split("-"))
 		#import pdb; pdb.set_trace()
-		dictMatch = 0 
-		dictMatch += longestMatchingSubsequence(dictKanji, origKanji)
-		dictMatch += longestMatchingSubsequence(origReading, dictReading)
+		dictMatch = longestMatchingSubsequence(dictKanji, origKanji)
 		if dictMatch > longestMatch:
 			longestMatch = dictMatch 
 			longestLink = dictLink 

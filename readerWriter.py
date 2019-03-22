@@ -15,13 +15,17 @@ with open('anki.txt', 'r') as readfile, open('anki.csv', 'w') as writefile:
 
 	for cur_line in readfile:
 		# DONE: Write logic for finding each row of the readfile
- 		# TODO: make function to parse the line appropriately
+ 		# DONE: make function to parse the line appropriately
 
  		word, furigana = dataProcessingFunctions.getWordFurigana(cur_line)
-		# TODO: Write logic to use the helper utilities to find values to write
-		# TODO: Write logic for writing the values that are returned 
+		# DONE: Write logic to use the helper utilities to find values to write
 		searchResults = webParsingFunctions.getSearchResults(word)
-		# TODO: write logic for handling invalid webpage
+		# DONE: write logic for handling invalid webpage
+
+
+		if not dataProcessingFunctions.validWordPage(searchResults):
+			# TODO: not really, just want to write word to separate writefile
+			continue 
 
 		definitionLink = webParsingFunctions.getDefinitionLink(furigana + word, searchResults)
 		definitions = webParsingFunctions.getSoup(definitionLink)
