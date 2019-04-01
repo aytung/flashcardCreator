@@ -1,61 +1,86 @@
 import csv
 import webParsingFunctions
 import dataProcessingFunctions
-with open('anki.txt', 'r') as readfile, open('anki.csv', 'w') as writefile:
+from dataProcessingFunctions import ResultPageType
+with open('anki.txt', 'r') as readfile, open('dict.txt', 'w') as writefile, open('error.txt', 'w') as errorfile:
 
-	writer = csv.writer(writefile, quoting=csv.QUOTE_MINIMAL)
+	# writer = csv.writer(writefile, quoting=csv.QUOTE_MINIMAL)
 
-	# the fields of the dictionary cards are of the form "front, back"
-	# not necessary, though
-	#writer.writerow(["Front","Back"])
-
-
-	definition = None 
-	dict_card = None
-
+	
+	# read line
 	for cur_line in readfile:
-		# DONE: Write logic for finding each row of the readfile
- 		# DONE: make function to parse the line appropriately
-
- 		word, furigana = dataProcessingFunctions.getWordFurigana(cur_line)
-		# DONE: Write logic to use the helper utilities to find values to write
-		searchResults = webParsingFunctions.getSearchResults(word)
-		# DONE: write logic for handling invalid webpage
-
-
-		if not dataProcessingFunctions.validWordPage(searchResults):
-			# TODO: not really, just want to write word to separate writefile
+		# if the current line is blank, skip it
+		if cur_line.strip() == "":
 			continue 
+		print(cur_line)	
+		# get back a string consisting of the word, and furignana	
+		kanji, furigana = dataProcessingFunctions.getWordFurigana(cur_line)
 
-		definitionLink = webParsingFunctions.getDefinitionLink(furigana + word, searchResults)
-		definitions = webParsingFunctions.getSoup(definitionLink)
-		definition, sentences = dataProcessingFunctions.getDefinitionSentences(definitions)
-		# TODO: write logic for turning definitions into properly formatted values 
-		# TODO: write logic for writing row for dictionary entries
-		# TODO: write logic for substuting readings into example sentences, if applicable
+		# get the search result 
+		searchResult = webParsingFunctions.getSearchResults(kanji)
 
-		# TODO: write logic for writing example sentences into separate lines 
+		# deal with the corresponding page
+		defPageType = dataProcessingFunctions.getResultPageType(searchResult)
 
-		# if it is a sentence, immediately write it
-		if is_sentence(cur_line.strip()):
-			writer.writerow([cur_line[:-1], None])
-		# when this happens, we need to write a definition card
-		elif cur_line == "\n" and dict_card:
-			if definition:
-				definition = definition[:-1]
-			dict_card.append(definition)
-			writer.writerow(dict_card)
-			dict_card = None
-		# define definition or add more
-		elif dict_card:
-			if not definition:
-				definition = cur_line
+
+		definition = None 
+		sentences = None 
+		# if cur_line.strip() == "比[ひ]率":
+		# import pdb; pdb.set_trace()
+		# if invalid word, then write to errorfile
+		if searchResult == None:
+			print("none result")
+		if defPageType == ResultPageType.NORESULT:
+			#errorfile.writerow(cur_line)
+			print('invalid word')
+			continue 
+		elif dataProcessingFunctions.isWordPage(searchResult):
+			definitions, sentences = dataProcessingFunctions.getDefinitionSentences(searchResult, defPageType)
+		else:
+			#definitions = webParsingFunctions.getSoup(definitionLink)
+			# searchResult = None 
+			# try:
+
+			newResult = webParsingFunctions.getDefinitionPage(\
+			dataProcessingFunctions.getDefinitionLink(furigana + kanji, searchResult))
+
+			writefile.write(dataProcessingFunctions.getDefinitionLink(furigana + kanji, searchResult))
+			# except:
+			newResult = webParsingFunctions.getSoup(newResult)
+			defPageType = dataProcessingFunctions.getResultPageType(newResult)
+
+			definitions, sentences = dataProcessingFunctions.getDefinitionSentences(newResult, defPageType)
+
+
+
+		word = cur_line.strip()
+
+		for sentence in sentences:
+			if "―" in sentence:
+				sentence.replace("―", word) 
+			elif "―・" in sentence:
+				sentence.replace("―・", word)
 			else:
-				definition += cur_line
-		# means that we need to add a new dictionary entry
-		elif cur_line != "\n":
-			definition = None
-			dict_card = [cur_line[:-1]]
+				sentence.replace(kanji, word)
+		print(word)
+		print(definition)
+		writefile.write(str(defPageType))
+		writefile.write(word.strip())
+		# TODO: deal with incorrect classification of wordpages as ALT when simple
+		# TODO: find out how to parse the word pages when simple and sentence
+		writefile.write('\n')
+		for definition in definitions:
+			writefile.write(definition.strip())
+			writefile.write('\n')
+
+		writefile.write('\n')
+
+		print(sentences)
+		for sentence in sentences:
+			writefile.write(sentence.strip())
+			writefile.write('\n\n')
+
 
 	readfile.close()
 	writefile.close()
+	errorfile.close()

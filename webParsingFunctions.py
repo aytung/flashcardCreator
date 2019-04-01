@@ -2,7 +2,8 @@ import bs4 as bs
 from urllib.request import Request, urlopen
 from urllib.parse import quote
 
-
+# need to use special header so that
+# website will accept request
 def getSoup(url):
 	# site = 'https://dictionary.goo.ne.jp/jn/'
 	hdr = {'User-Agent': 'Mozilla/5.0'}
@@ -12,34 +13,10 @@ def getSoup(url):
 
 	return soup
 
-def isInvalidWord(soup):
-	# TODO: write logic for detecting invalid webpage
-	None
+def getDefinitionPage(url):
+	return "https://dictionary.goo.ne.jp" + url 
 def getSearchResults(word):
 	percentEncoding = quote(word)
 	wordUrl = 'https://dictionary.goo.ne.jp/srch/jn/' + percentEncoding + '/m0u/'
 	return getSoup(wordUrl)
-
-def getDefinitionLink(word, soup):
-	longestMatch = 0
-	longestLink = None
-	for definition in definitions:
-		# TODO: whenever the entire character is a set phrase
-		# find the pronunciation and definition
-		dictReading, dictKanji = definition.dt.text.split("【")
-		# want to remove last character
-		dictKanji = dictKanji[:-1]	 
-		dictReading = "".join(dictReading.split("‐"))
-		dictLink = definition.a.get('href')
-
-		# dictReadings = "".join(dictReadings.split("-"))
-		#import pdb; pdb.set_trace()
-		dictMatch = longestMatchingSubsequence(dictKanji, origKanji)
-		if dictMatch > longestMatch:
-			longestMatch = dictMatch 
-			longestLink = dictLink 
-
-	return longestLink
-
-
 
