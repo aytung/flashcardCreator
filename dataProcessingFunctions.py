@@ -14,7 +14,8 @@ class ResultPageType(Enum):
 def isWordPage(soup):
 	return len(soup.findAll('div', {'class' : 'contents_area meaning_area cx'})) != 0
 def isComplexWordPage(soup):
-	return len(soup.find_all('ol', {'class' : 'meaning cx'})) != 0
+	# return len(soup.find_all('ol', {'class' : 'meaning cx'})) != 0
+	return len(set([element.text.strip() for element in soup.find_all('ol', {'class' : 'meaning cx'})])) >= 2
 def isAlternativeWordPage(soup):
 	# import pdb; pdb.set_trace()
 	# import pdb; pdb.set_trace()
@@ -52,8 +53,6 @@ def getWordFurigana(word):
 	# section, with None 
 	furiganaSection = []
 	wordSection = []
-	if word == "比[ひ]率":
-		import pdb; pdb.set_trace()
 	for section in sections:
 		if furiganaRegexp.search(section):
 			word = section[:furiganaRegexp.search(section).start()]
@@ -150,7 +149,28 @@ def getDefinitionSentencesSimple(soup):
 	return definition, exampleSentences
 
 def getDefinitionSentencesAlt(soup):
-	return soup.find('div', {'class' : 'contents_area meaning_area cx'}).find('div', {'class' : 'text'}).text, ""
+	# return soup.find('div', {'class' : 'contents_area meaning_area cx'}).find('div', {'class' : 'text'}).text, ""
+	textbox = soup.find('div', {'class' : 'contents_area meaning_area cx'})
+	sentences = textbox.find('li')
+
+	if sentences:
+		sentences.extract()
+
+	if textbox.p:
+		textbox.p.extract()
+
+
+	definition = textbox.text.strip()
+	if sentences:
+		sentences = sentences.text
+		if '\n' in sentences:
+			sentences = [sentence for sentence in sentences.split('\n') if sentence]
+	else:
+		sentences = ''
+	if type(sentences) != list:
+		return [definition], [sentences]
+
+	return [definition], sentences
 
 
 
@@ -170,7 +190,7 @@ def getDefinitionSentencesComplex(soup):
 		if unwanted:
 			unwanted.extract()
 		dictEntry = dictEntry.text
-		definition.append(exampleRegexp.split(dictEntry)[0])
+		definition.append(exampleRegexp.split(dictEntry)[0].strip())
 
 		examples = re.findall(exampleRegexp, dictEntry)
 		for example in examples:

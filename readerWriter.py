@@ -2,7 +2,7 @@ import csv
 import webParsingFunctions
 import dataProcessingFunctions
 from dataProcessingFunctions import ResultPageType
-with open('anki.txt', 'r') as readfile, open('dict.txt', 'w') as writefile, open('error.txt', 'w') as errorfile:
+with open('words.txt', 'r') as readfile, open('anki.txt', 'w') as writefile, open('error.txt', 'w') as errorfile:
 
 	# writer = csv.writer(writefile, quoting=csv.QUOTE_MINIMAL)
 
@@ -10,7 +10,7 @@ with open('anki.txt', 'r') as readfile, open('dict.txt', 'w') as writefile, open
 	# read line
 	for cur_line in readfile:
 		# if the current line is blank, skip it
-		if cur_line.strip() == "":
+		if not cur_line.strip():
 			continue 
 		print(cur_line)	
 		# get back a string consisting of the word, and furignana	
@@ -25,7 +25,6 @@ with open('anki.txt', 'r') as readfile, open('dict.txt', 'w') as writefile, open
 
 		definition = None 
 		sentences = None 
-		# if cur_line.strip() == "比[ひ]率":
 		# import pdb; pdb.set_trace()
 		# if invalid word, then write to errorfile
 		if searchResult == None:
@@ -40,45 +39,71 @@ with open('anki.txt', 'r') as readfile, open('dict.txt', 'w') as writefile, open
 			#definitions = webParsingFunctions.getSoup(definitionLink)
 			# searchResult = None 
 			# try:
-
+			# if cur_line.strip() == "荒[あ]れる" or cur_line.strip() == "比[ひ] 較[かく]":
+			#  	import pdb; pdb.set_trace()
+		
 			newResult = webParsingFunctions.getDefinitionPage(\
 			dataProcessingFunctions.getDefinitionLink(furigana + kanji, searchResult))
 
-			writefile.write(dataProcessingFunctions.getDefinitionLink(furigana + kanji, searchResult))
+			# writefile.write(dataProcessingFunctions.getDefinitionLink(furigana + kanji, searchResult))
 			# except:
 			newResult = webParsingFunctions.getSoup(newResult)
 			defPageType = dataProcessingFunctions.getResultPageType(newResult)
-
+			# if cur_line.strip() == "比[ひ] 較[かく]":
+			# 	import pdb; pdb.set_trace()
+			
+			# import pdb; pdb.set_trace()	
 			definitions, sentences = dataProcessingFunctions.getDefinitionSentences(newResult, defPageType)
 
 
 
 		word = cur_line.strip()
 
-		for sentence in sentences:
-			if "―" in sentence:
-				sentence.replace("―", word) 
-			elif "―・" in sentence:
-				sentence.replace("―・", word)
-			else:
-				sentence.replace(kanji, word)
+		# TODO: make a function in order to do this automatically
+		print(sentences)
+		definitions = [definitions for definition in definitions if definition]
+		if sentences:
+			sentences = [sentence for sentence in sentences if sentence]
+
+		if sentences:
+			for index in range(0, len(sentences)):
+				sentence = sentences[index]
+				if "―・" in sentence:
+					sentences[index] = sentence.replace("―・", " " + word).strip()
+				elif "―" in sentence:
+					sentences[index] = sentence.replace("―", " " + word).strip()
+				else:
+					if kanji:
+						print("there is kanji: ", kanji, "word", word)
+						print("sentence: ", sentence)
+						sentences[index] = sentence.replace(kanji, " " + word).strip()
 		print(word)
 		print(definition)
-		writefile.write(str(defPageType))
 		writefile.write(word.strip())
-		# TODO: deal with incorrect classification of wordpages as ALT when simple
-		# TODO: find out how to parse the word pages when simple and sentence
 		writefile.write('\n')
+		# TODO: figure out why sometimes result is not unique
+		tempDefinitions = set()
+		if type(definitions[0]) is list:
+			for definition in definitions:
+				if type(definition) is list:
+					for element in definition:
+						if element not in tempDefinitions:
+							tempDefinitions.add(element)
+
+			definitions = list(tempDefinitions)
 		for definition in definitions:
-			writefile.write(definition.strip())
+			print(definition)
+			writefile.write(definition)
 			writefile.write('\n')
 
 		writefile.write('\n')
 
+		sentences = list(set(sentences))
 		print(sentences)
-		for sentence in sentences:
-			writefile.write(sentence.strip())
-			writefile.write('\n\n')
+		if sentences:
+			for sentence in sentences:
+				writefile.write(sentence.strip())
+				writefile.write('\n\n')
 
 
 	readfile.close()
