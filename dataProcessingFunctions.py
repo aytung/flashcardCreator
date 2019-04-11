@@ -2,6 +2,7 @@ import re
 
 exampleRegexp = re.compile(r"""「.*」""")
 
+parenRegexp = re.compile(r"""（.*）""")
 furiganaRegexp = re.compile(r"""\[.*\]""")
 from enum import Enum
 class ResultPageType(Enum):
@@ -10,12 +11,18 @@ class ResultPageType(Enum):
 	SIMPLEWORDPAGE = 2
 	DEFPAGE = 3 
 	ALTWORDPAGE = 4
-
+# Determine whether the page has a box contaning a meaning_area,
+# Which typically contains definitions
 def isWordPage(soup):
 	return len(soup.findAll('div', {'class' : 'contents_area meaning_area cx'})) != 0
+
+# Determines whether or not the web page contains more than one definition
 def isComplexWordPage(soup):
 	# return len(soup.find_all('ol', {'class' : 'meaning cx'})) != 0
 	return len(set([element.text.strip() for element in soup.find_all('ol', {'class' : 'meaning cx'})])) >= 2
+
+# Determines whether the word page is not a complex work page or a simple word page
+# Determines whether or not the page has 
 def isAlternativeWordPage(soup):
 	# import pdb; pdb.set_trace()
 	# import pdb; pdb.set_trace()
@@ -39,26 +46,21 @@ def getResultPageType(soup):
  		return ResultPageType.NORESULT
 	else:
 		return ResultPageType.DEFPAGE 
-def validWordPage(soup):
-	rteurn 
 
 def joinDefinitions(definitions):
 	return "\n".join(definitions)
 def getWordFurigana(word):
 	sections = word.strip().split(' ')
 
-	# check how many sections there are
-	# we want to return tuples corresponding to characters and words
-	# when there is no furigana, then we write a tuple consisting of the 
-	# section, with None 
 	furiganaSection = []
 	wordSection = []
 	for section in sections:
 		if furiganaRegexp.search(section):
 			word = section[:furiganaRegexp.search(section).start()]
-			furigana = furiganaRegexp.findall(section)[0][1:-1]
+			furigana = furiganaRegexp.findall(section)[0]
 
-			wordSection.append(word.replace(furigana, ""))
+			wordSection.append(section.replace(furigana, ""))
+			furigana = furigana[1:-1]
 			furiganaSection.append(furigana)
 		else:
 			wordSection.append(section)
@@ -87,24 +89,34 @@ def getDefinitionLink(word, soup):
 
 	links = soup.find('ul', {'class' : 'list-search-a'})
 	definitions = links.find_all('li')
-	# import pdb; pdb.set_trace()
-	for definition in definitions:
-		print(definition.dt.text)
-		if "(" in definition.dt.text or ")" in definition.dt.text:
-			continue
-		dictReading, dictKanji = definition.dt.text.split("【")
-		# want to remove last character
-		dictKanji = dictKanji[:-1]	 
-		dictReading = "".join(dictReading.split("‐"))
-		dictLink = definition.a.get('href')
+	for fullDefinition in definitions:
+		definition = fullDefinition.dt.text
+		print(definition)
 
+		while parenRegexp.findall(definition):
+			definition = "".join(parenRegexp.split(definition))
+			# definitions = definition.replace(parenRegexp)
+
+		if "(" in definition or ")" in definition:
+			continue
+		dictReading, dictKanji = "", ""
+		if "【" in definition:
+			dictReading, dictKanji = definition.split("【")
+		else:
+			dictReading = definition
+		dictKanji = dictKanji.strip()
+		dictReading = "".join(dictReading.split("‐"))
+		dictLink = fullDefinition.a.get('href')
 		print("kanji", dictKanji, "reading", dictReading)
-		dictMatch = longestMatchingSubsequence(dictKanji, word)
+		dictMatch = longestMatchingSubsequence(dictReading + dictKanji, word)
 		definitionLength = len(dictReading) + len(dictKanji)
-		if dictMatch > longestMatch and longestMatchLength > dictMatch:
+		print("dictmatch", dictMatch)
+		print("definitionlength", definitionLength)
+
+		if dictMatch > longestMatch or longestMatchLength > dictMatch and dictMatch == longestMatch:
 			longestMatch = dictMatch 
 			longestLink = dictLink 
-			longestMatchLength = dictMatch
+			longestMatchLength = definitionLength 
 
 	print(longestLink)
 	return longestLink
